@@ -1,0 +1,28 @@
+# Hidden directories:
+.*/
+
+# Editors (Eclipse, WingIDE, Vim):
+.sw?
+.*.sw?
+*~
+*.bak
+.project
+.pydevproject
+.wp[ru]
+
+
+# Python package files:
+*.egg
+*.egg-info
+build
+dist
+eggs
+sdist
+develop-eggs
+pip-wheel-metadata
+.installed.cfg
+MANIFEST
+
+
+# Keep empty directories:
+!*/.git*
