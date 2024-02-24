@@ -24,5 +24,5 @@ pip install -e . -c ./requirements.txt
 ### Get day's 1 Calibration Value, by running
 
 ```
-python -m adventofcode.trebuchet_calibration -in {path to your input.txt}
+python -m adventofcode.trebuchet_calibrations -in {path to your input.txt}
 ```
