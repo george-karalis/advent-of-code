@@ -4,55 +4,59 @@ Calculates and recovers with immaculate precision the exact calibration value.
 """
 
 import argparse
-import logging
+
+# import logging
 import re
-import sys
 from pathlib import Path
 
 from word2number import w2n
 
-from adventofcode.digits_collection import ALPHA_DIGITS, NUMERICAL_DIGITS
+from adventofcode.data_collection import ALPHA_DIGITS, NUMERICAL_DIGITS
+from adventofcode.setup_console import log_error, log_success
 
-logger = logging.getLogger(__spec__.name if __spec__ else __name__)
-
-
-digit_scanner_method = {1: NUMERICAL_DIGITS + ALPHA_DIGITS}
+digit_scanner_method = {1: NUMERICAL_DIGITS, 2: NUMERICAL_DIGITS + ALPHA_DIGITS}
 
 
-def calibrate(args: argparse.Namespace) -> None:
+class Calibrate:
     """
-    ### Calculate each lines's first and last digit sum, from the txt file.
-    ---
-    """
-    calibration_value = 0
-    scanner_lookup = digit_scanner_method.get(args.day)
-    if not scanner_lookup:
-        raise KeyError(f"{args.day} has not been yet implemented")
-
-    with open(args.input_file) as FileObj:
-        for line in FileObj:
-            calibration_value += get_first_and_last_digit(line, scanner_lookup)
-
-    logger.info(f"Calibration value: {calibration_value}")
-
-
-def get_first_and_last_digit(line: str, scanner_lookup: list[str]) -> int:
-    """
-    ### Returns the first and last digits for a line as a 2-digit int.
-    ---
+    ## Calibrate Trebuchet accurately.
     """
 
-    pattern = "|".join(scanner_lookup)
-    first_digit = re.findall(pattern, line)
-    last_digit = re.findall(pattern, line[::-1])
+    def __init__(self, args) -> None:
+        self.calibration_doc = args.input_file
+        self.scan_pattern = digit_scanner_method.get(args.scan_method, NUMERICAL_DIGITS)
+        self.calibration_value = 0
 
-    if not len(first_digit):
-        raise KeyError(f"No digit found in line: {line}")
+    def calibrate(self) -> None:
+        """
+        ### Calculate each lines's first and last digit sum, from the txt file.
+        ---
+        """
 
-    string_digits = [first_digit[0], last_digit[0][::-1]]
-    digits_in_line = [str(w2n.word_to_num(digit)) for digit in string_digits]
+        with open(self.calibration_doc) as FileObj:
+            for line in FileObj:
+                self.calibration_value += self.get_first_and_last_digit(line)
 
-    return int(digits_in_line[0] + digits_in_line[-1])
+        log_success(f"Calibration value: {self.calibration_value}")
+
+    def get_first_and_last_digit(self, line: str) -> int:
+        """
+        ### Returns the first and last digits for a line as a 2-digit int.
+        ---
+        """
+
+        pattern = "|".join(self.scan_pattern)
+        first_digit = re.findall(pattern, line)
+        last_digit = re.findall(pattern, line[::-1])
+
+        if not len(first_digit):
+            log_error(f"No digit found in line: {line}")
+            raise KeyError(f"No digit found in line: {line}")
+
+        string_digits = [first_digit[0], last_digit[0][::-1]]
+        digits_in_line = [str(w2n.word_to_num(digit)) for digit in string_digits]
+
+        return int(digits_in_line[0] + digits_in_line[-1])
 
 
 # TODO: find out how rich could work for the cli.
@@ -69,9 +73,10 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         "-in", "--input-file", type=Path, help="Add the input file path."
     )
     parser.add_argument(
-        "--day",
+        "--scan_method",
         type=int,
         default=1,
+        choices=[1, 2],
         help="Different Day Same Problem, Different Approach. Select the Day to Select the Approach",
     )
     return parser.parse_args(argv)
@@ -80,11 +85,8 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = parse_arguments(argv)
 
-    streamHandler = logging.StreamHandler(sys.stdout)
-    logger.addHandler(streamHandler)
-    logger.setLevel(logging.INFO)
-
-    calibrate(args)
+    calibrate = Calibrate(args)
+    calibrate.calibrate()
 
 
 if __name__ == "__main__":
