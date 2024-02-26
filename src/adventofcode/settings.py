@@ -2,7 +2,11 @@
 Contains all the necessary hard coded data, that each puzzle requires in order to reach to its resolution.
 """
 
-from dataclasses import dataclass
+from pathlib import Path
+
+import adventofcode
+
+INPUT_FILE_PATH = Path(Path(adventofcode.__file__).parent, "assets")
 
 # Day1: Collections of strings to be identify while scanning the calibration document
 
@@ -30,18 +34,10 @@ ALPHA_DIGITS = [
     "enin",
 ]
 
-# Day2: Satchel contents
+# Day2: Max Available Cubes
 
-
-@dataclass(frozen=True)
-class Satchel:
-    red_count: int
-    green_count: int
-    blue_count: int
-
-
-SATCHEL = Satchel(
-    red_count=12,
-    green_count=13,
-    blue_count=14,
-)
+DEFAULT_CUBES_COUNT = {
+    "RED": 12,
+    "GREEN": 13,
+    "BLUE": 14,
+}

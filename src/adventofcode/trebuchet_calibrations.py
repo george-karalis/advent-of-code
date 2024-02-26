@@ -4,14 +4,12 @@ Calculates and recovers with immaculate precision the exact calibration value.
 """
 
 import argparse
-
-# import logging
 import re
 from pathlib import Path
 
 from word2number import w2n
 
-from adventofcode.data_collection import ALPHA_DIGITS, NUMERICAL_DIGITS
+from adventofcode.settings import ALPHA_DIGITS, INPUT_FILE_PATH, NUMERICAL_DIGITS
 from adventofcode.setup_console import log_error, log_success
 
 digit_scanner_method = {1: NUMERICAL_DIGITS, 2: NUMERICAL_DIGITS + ALPHA_DIGITS}
@@ -59,7 +57,6 @@ class Calibrate:
         return int(digits_in_line[0] + digits_in_line[-1])
 
 
-# TODO: find out how rich could work for the cli.
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     """
     ### Parse arguments via argv.
@@ -70,7 +67,11 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         description=__doc__,
     )
     parser.add_argument(
-        "-in", "--input-file", type=Path, help="Add the input file path."
+        "-in",
+        "--input-file",
+        type=Path,
+        default=Path(INPUT_FILE_PATH, "calibration_doc_input.txt"),
+        help="Add the input file path.",
     )
     parser.add_argument(
         "--scan_method",
