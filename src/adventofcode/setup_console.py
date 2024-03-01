@@ -13,7 +13,7 @@ console = console.Console(theme=CUSTOM_THEME)
 
 
 def log_success(message):
-    success_message = f":white_check_mark: {message} "
+    success_message = f":heavy_check_mark: {message} "
     console.log(success_message, style="success")
 
 
