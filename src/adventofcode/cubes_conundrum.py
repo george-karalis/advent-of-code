@@ -3,38 +3,70 @@ Identifies the IDs of the possible games and calculates their sum.
 """
 
 import argparse
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Generator
+
 
 from adventofcode.settings import DEFAULT_CUBES_COUNT, INPUT_FILE_PATH
 from adventofcode.setup_console import log_error, log_success
 
 
-class GameIDAggregator:
+@dataclass
+class Cube:
+    color: str
+    count: int
+
+
+@dataclass
+class GameSet:
+    cubes: list[Cube] = field(default_factory=list)
+
+
+@dataclass
+class Game:
+    game_id: int
+    game_sets: list[GameSet] = field(default_factory=list)
+
+
+class GameCreator:
     """
-    ## Calculate the sum of all the valid Game IDs.
+    ## Base Game Creator
     """
 
     def __init__(self, args) -> None:
         self.cubes_combinations = args.input_file
 
-    def aggregator(self) -> None:
+    def game_parser(self) -> Generator:
         """
-        ### Calculate the sum of all the valid Game IDs.
-        ---
+        ### Generates `Game` objects from strings.
+
+        Yields
+        ------
+            `Game` objects.
         """
-        valid_game_ids_sum = 0
         with open(self.cubes_combinations) as FileObj:
             for game in FileObj:
-                game_id = self.game_referee(game)
-                if game_id is None:
-                    continue
-                valid_game_ids_sum += game_id
-        log_success(f"Total sum of valid Game ids: {valid_game_ids_sum}")
+                game = self.split_game_and_sets(game)
+                yield game
 
-    def game_referee(self, game: str) -> int | None:
+    def split_game_and_sets(self, game: str) -> Game:
         """
-        Creates Sets from Game line, and validates the number of cubes in each set of the game.
-        If all the game sets have valid number of cubes, it returns the game id.
+        ### Get Game Sets Out of the Game.
+
+        Parameters
+        ----------
+        game
+            The game as read from the input file.
+
+        Returns
+        -------
+            The game as a `Game`
+
+        Raises
+        ------
+        KeyError
+            In the case the game doesn't have a numeric ID.
         """
         game_str, game_sets = game.split(":")
         _, game_id = game_str.split()
@@ -42,32 +74,139 @@ class GameIDAggregator:
             error_message = f"{game_id} is not a valid ID"
             log_error(error_message)
             raise KeyError(error_message)
-        game_id = int(game_id)
         game_sets = game_sets.split(";")
+        game_obj = self.get_game_record(game_id, game_sets)
+
+        return game_obj
+
+    def get_game_record(self, game_id: str, game_sets: list[str]) -> Game:
+        """
+        ### Configure the sets of the game.
+
+        Parameters
+        ----------
+        game_id
+            Each game's ID
+        game_sets
+            Each game's list of GameSet
+
+        Returns
+        -------
+            Creates the game itself as a `Game`
+        """
+
+        game = Game(game_id=int(game_id))
         for game_set in game_sets:
+            game_set_cubes = []
             cubes = game_set.split(",")
             for cube in cubes:
-                cube_count_valid = self.check_validity(cube)
-                if not cube_count_valid:
-                    return None
-        return game_id
+                cube_count, cube_color = cube.split()
+                game_set_cubes.append(Cube(color=cube_color, count=int(cube_count)))
+            game.game_sets.append(GameSet(cubes=game_set_cubes))
+        return game
 
-    def check_validity(self, cube: str) -> bool:
+
+class ValidGameIDAggregator(GameCreator):
+    """
+    Calculates the ID Sum of all the Valid Games.
+
+    Parameters
+    ----------
+    GameCreator
+        Inherits the Game from the `GameCreator` Class
+    """
+
+    def __init__(self, args) -> None:
+
+        super().__init__(args)
+        self.valid_game_id_aggregator = 0
+
+    def game_parser(self) -> None:
         """
-        Validates Cube's Count.
+        ### Goes through the games and determine their validity.
         """
-        cube_count, cube_color = cube.split()
-        cube_max_threshold_count = DEFAULT_CUBES_COUNT.get(cube_color.upper())
-        if cube_max_threshold_count is None:
-            log_error(f"There shouldn't be any {cube_color} cubes in the bad.")
-            return False
-        return int(cube_count) <= cube_max_threshold_count
+        for game in super().game_parser():
+            game_sets = game.game_sets
+            game_validity = self.game_set_validator(game_sets)
+            if game_validity:
+                self.valid_game_id_aggregator += game.game_id
+
+        log_success(f"Total sum of valid Game IDs: {self.valid_game_id_aggregator}")
+
+    def game_set_validator(self, game_sets: list[GameSet]) -> bool:
+        """
+        ### Validates game Sets.
+
+        Parameters
+        ----------
+        game_sets
+            list of GameSet
+
+        Returns
+        -------
+            Validity of the Game.
+        """
+        for game_set in game_sets:
+            for cube in game_set.cubes:
+                validity = cube.count <= DEFAULT_CUBES_COUNT[cube.color.upper()]
+                if not validity:
+                    return validity
+        return validity
+
+
+class GamePowerAggregator(GameCreator):
+    """
+    ## Calculates the Power Sum of all the Games.
+
+    Parameters
+    ----------
+    GameCreator
+        Inherits the Game from the `GameCreator` Class
+    """
+
+    def __init__(self, args) -> None:
+        super().__init__(args)
+        self.game_power_sum = 0
+
+    def game_parser(self) -> None:
+        for game in super().game_parser():
+            game_sets = game.game_sets
+            self.game_power_sum += self.max_cube_count(game_sets)
+
+        log_success(f"Total Power of all Games: {self.game_power_sum}")
+
+    def max_cube_count(self, game_sets: list[GameSet]) -> int:
+        """
+        What is the least count for each cube color that would be sufficient for the game to be valid?
+        This question is answered in this method, alongside the calculation of the power of the Game.
+
+        Parameters
+        ----------
+        game_sets
+            List of `GameSet`
+
+        Returns
+        -------
+            The Power of the Game.
+        """
+        min_red_count, min_blue_count, min_green_count = 0, 0, 0
+        for game_set in game_sets:
+            for cube in game_set.cubes:
+                if cube.color == "red":
+                    min_red_count = max(cube.count, min_red_count)
+                elif cube.color == "blue":
+                    min_blue_count = max(cube.count, min_blue_count)
+                else:
+                    min_green_count = max(cube.count, min_green_count)
+
+        game_set_power = min_green_count * min_red_count * min_blue_count
+
+        return game_set_power
 
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     """
-    ### Parse arguments via argv.
-    ---
+    ### Parse arguments from cli.
     """
 
     parser = argparse.ArgumentParser(
@@ -107,9 +246,14 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """
+    ### Get the arguments from cli and execute the Game Calculations.
+    """
     args = parse_arguments(argv)
-    valid_game_ids = GameIDAggregator(args)
-    valid_game_ids.aggregator()
+    valid_game_ids = ValidGameIDAggregator(args)
+    valid_game_ids.game_parser()
+    game_power = GamePowerAggregator(args)
+    game_power.game_parser()
 
 
 if __name__ == "__main__":
