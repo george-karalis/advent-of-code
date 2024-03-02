@@ -1,6 +1,6 @@
 # advent-of-code
 
-## Tracks the progress of solving the [Advent of Code](<https://adventofcode.com/>) puzzles using Python
+## Tracks the progress of solving the 2023 [Advent of Code](<https://adventofcode.com/>) puzzles using Python
 
 ---
 
@@ -25,4 +25,12 @@ pip install -e . -c ./requirements.txt
 
 ```
 python -m adventofcode.trebuchet_calibrations -in {path to your input.txt}
+```
+
+## [Day 2: Cubes Conundrum?](https://adventofcode.com/2023/day/2)
+
+### Get day's 2 Total Valid Game ID sum and Total Power of all Games, by running
+
+```
+python -m adventofcode.cubes_conundrum
 ```
