@@ -41,3 +41,17 @@ DEFAULT_CUBES_COUNT = {
     "GREEN": 13,
     "BLUE": 14,
 }
+
+
+# Day 3: Neighbor Indexes
+
+NEIGHBOR_INDEXES = [
+    (-1, -1),
+    (-1, 0),
+    (-1, 1),
+    (0, -1),
+    (0, 1),
+    (1, -1),
+    (1, 0),
+    (1, 1),
+]
