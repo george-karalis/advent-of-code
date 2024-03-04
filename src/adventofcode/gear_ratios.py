@@ -18,8 +18,7 @@ class GearRatios:
         self.input_file = args.input_file
         self.grid = self.create_grid()
         self.lines_num, self.chars_num = len(self.grid), len(self.grid[0])
-        # self.digits_positions = []
-        # self.adjacent_positions = {}
+        self.sum = 0
 
     def create_grid(self) -> list[list[str]]:
         with open(self.input_file, "r") as FileObj:
@@ -31,13 +30,46 @@ class GearRatios:
         ### Scan through each character of each line and check if they are valid digits.
         """
         for line_idx in range(self.lines_num):
-            for char_idx in range(self.chars_num):
-                # char = self.grid[line_idx][char_idx]
+            valid_position = False
+            char_idx = 0
+            while char_idx < self.chars_num:
                 if not self.grid[line_idx][char_idx].isdigit():
+                    char_idx += 1
                     continue
-                valid_number = self.check_char_neighbors(line_idx, char_idx)
+                valid_position = self.check_char_neighbors(line_idx, char_idx)
+                digit = self.grid[line_idx][char_idx]
+                while self.next_char_is_digit_too(line_idx, char_idx):
+                    digit += self.grid[line_idx][char_idx + 1]
+                    valid_position = valid_position or self.check_char_neighbors(
+                        line_idx, char_idx + 1
+                    )
+                    char_idx += 1
+                char_idx += 1
+                if valid_position:
+                    self.sum += int(digit)
 
+    def next_char_is_digit_too(self, line_idx: int, char_idx: int) -> bool:
+        """
+        ### Checks next character if it's digit or not.
 
+        Parameters
+        ----------
+        line_idx
+            Current line index the script scans for digits.
+        char_idx
+            Current character index, known that it is a digit.
+
+        Returns
+        -------
+            True if it is a digit False if it is not.
+        """
+
+        if (
+            char_idx + 1 < self.chars_num
+            and self.grid[line_idx][char_idx + 1].isdigit()
+        ):
+            return True
+        return False
 
     def check_char_neighbors(self, line_idx: int, char_idx: int) -> bool:
         """
@@ -82,56 +114,11 @@ class GearRatios:
             return True
         return False
 
-
-
-
-
-
-
-
-
-
-    def get_valid_positions(self) -> dict[int, list[tuple[int]]]:
+    def engine_parts_sum(self) -> None:
         """
-         ### Create Records of Valid Positions in each line.
-
-        Parameters
-        ----------
-        lines
-            _description_
-
-        Returns
-        -------
-            _description_
+        ### Logs sum.
         """
-        for line_number, line in self.parse_lines():
-            if line_number == 0:
-                self.adjacent_positions[line_number] = []
-            elif line_number == len(self.lines):
-
-            self.adjacent_positions[line_number + 1] = []
-            for char_idx, char in enumerate(line):
-                if char.isdigit() or char == ".":
-                    continue
-                self.adjacent_positions[line_number].append(
-                    self.create_adjacent_positions(char_idx)
-                )
-
-    def create_adjacent_positions(self, char_idx: int) -> tuple[int]:
-        """
-        ### Identifies all the neighboring positions to the character.
-
-        Parameters
-        ----------
-        line_number
-            Line of special Character
-        char_idx
-            Index in Line the Character was found
-
-        Returns
-        -------
-            The Neighboring positions of the Character.
-        """
+        log_success(f"Total sum of engine part numbers: {self.sum}")
 
 
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
@@ -159,6 +146,9 @@ def main(argv: list[str] | None = None) -> None:
     """
 
     args = parse_arguments(argv)
+    gear_ratios = GearRatios(args)
+    gear_ratios.scan_schematic_grid()
+    gear_ratios.engine_parts_sum()
 
 
 if __name__ == "__main__":
