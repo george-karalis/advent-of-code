@@ -3,8 +3,7 @@
 """
 
 import argparse
-import re
-import numpy as np
+from functools import reduce
 from pathlib import Path
 from typing import Generator
 
@@ -149,8 +148,11 @@ class GearStarRatios(GearRatios):
                 if len(valid_positions) < 2:
                     char_idx += 1
                     continue
-                num1, num2 = self.create_numbers_from_digits(valid_positions)
-                self.sum += num1 * num2
+                power = reduce(
+                    lambda num1, num2: num1 * num2,
+                    self.create_numbers_from_digits(valid_positions),
+                )
+                self.sum += power
                 char_idx += 1
 
     def create_numbers_from_digits(self, valid_positions: dict) -> Generator:
