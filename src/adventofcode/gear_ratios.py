@@ -3,13 +3,12 @@
 """
 
 import argparse
-import re
-import numpy as np
+from functools import reduce
 from pathlib import Path
 from typing import Generator
 
 from adventofcode.settings import INPUT_FILE_PATH, NEIGHBOR_INDEXES
-from adventofcode.setup_console import log_error, log_success
+from adventofcode.setup_console import log_info, log_success
 
 
 class GearRatios:
@@ -121,6 +120,123 @@ class GearRatios:
         log_success(f"Total sum of engine part numbers: {self.sum}")
 
 
+class GearStarRatios(GearRatios):
+    """
+    ### Calculates the Sum of the Valid Gear Parts Pairs.
+
+    A Valid Gear Part Pair is the multiplication of two Gear Parts that
+    are both adjacent to the same `*` character.
+
+    Parameters
+    ----------
+    """
+
+    def __init__(self, args) -> None:
+        super().__init__(args)
+
+    def scan_schematic_grid_for_asterisk(self):
+        """
+        ### Scan through each character of each line and check if they are valid digits.
+        """
+        for line_idx in range(self.lines_num):
+            char_idx = 0
+            while char_idx < self.chars_num:
+                if not self.lookup(self.grid[line_idx][char_idx], ["*"]):
+                    char_idx += 1
+                    continue
+                valid_positions = self.check_char_neighbors(line_idx, char_idx)
+                if len(valid_positions) < 2:
+                    char_idx += 1
+                    continue
+                power = reduce(
+                    lambda num1, num2: num1 * num2,
+                    self.create_numbers_from_digits(valid_positions),
+                )
+                self.sum += power
+                char_idx += 1
+
+    def create_numbers_from_digits(self, valid_positions: dict) -> Generator:
+        """
+        ### Scans each line left and right from the adjacent character index to create the two
+        part numbers.
+
+        Parameters
+        ----------
+        valid_positions
+            Dictionary with two line, char index pairs, of the adjacent digits.
+
+        Returns
+        -------
+            The adjacent to the found `*` digits.
+        """
+        for line_idx, char_idx in valid_positions.items():
+
+            number = "".join(self.find_digit_char(line_idx=line_idx, char_idx=char_idx))
+            yield int(number)
+
+    def find_digit_char(self, line_idx: int, char_idx: int) -> list[str]:
+        """
+        ### Scans the line to create the full number.
+
+        Parameters
+        ----------
+        char_idx
+            The index of the character.
+        line_idx
+            The line the character has been found.
+        step
+            scan the line, left or right.
+        """
+        start = char_idx
+        line = self.grid[line_idx]
+        while start > 0 and line[start - 1].isdigit():
+            start -= 1
+        end = char_idx + 1
+        while end < len(line) and line[end].isdigit():
+            end += 1
+
+        return line[start:end]
+
+    def check_char_neighbors(self, line_idx: int, char_idx: int) -> dict:
+        """
+        ### Checks the neighboring characters for a symbol.
+
+        Parameters
+        ----------
+        line_idx
+            Line number of the character.
+        char_idx
+            Index of Character in the line.
+        """
+        valid_neighbors = {}
+        for neighbor_line_idx, neighbor_char_idx in NEIGHBOR_INDEXES:
+            line_i = neighbor_line_idx + line_idx
+            char_i = neighbor_char_idx + char_idx
+            if self.exceeds_length(line_i, char_i):
+                continue
+            neighbor_character = self.grid[line_i][char_i]
+            if neighbor_character.isdigit():
+                valid_neighbors[line_i] = char_i
+        return valid_neighbors
+
+    def lookup(self, character: str, acceptable_characters: list[str]) -> bool:
+        """
+        ### Check if the character is in the list of acceptable characters.
+
+        Parameters
+        ----------
+        character
+            The character in the grid
+        acceptable_character
+            List of acceptable characters
+
+        Returns
+        -------
+            True for character being one of the acceptable ones. False otherwise.
+        """
+        return character in acceptable_characters
+
+
 def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     """
     ### Parse arguments from cli.
@@ -149,6 +265,10 @@ def main(argv: list[str] | None = None) -> None:
     gear_ratios = GearRatios(args)
     gear_ratios.scan_schematic_grid()
     gear_ratios.engine_parts_sum()
+
+    gear_star_ratios = GearStarRatios(args)
+    gear_star_ratios.scan_schematic_grid_for_asterisk()
+    gear_star_ratios.engine_parts_sum()
 
 
 if __name__ == "__main__":
